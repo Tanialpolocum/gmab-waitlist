@@ -30,39 +30,26 @@ export default function Page() {
       });
 
       if (res.ok) {
-        await fetch("/api/notify", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    email: formData.get("email"),
-    name: formData.get("name"),
-    company: formData.get("company"),
-    role: formData.get("role"),
-    notes: formData.get("notes"),
-  }),
-});
+  const payload = {
+    email: data.get("email"),
+    name: data.get("name"),
+    company: data.get("company"),
+    role: data.get("role"),
+    notes: data.get("notes"),
+  };
 
-        setStatus("success");
-        form.reset(); // safe: uses e.currentTarget
-      } else {
-        const j = await res.json().catch(() => ({}));
-        setStatus("error");
-        setMsg(j?.errors?.[0]?.message || "Something went wrong. Please try again.");
-      }
-    } catch (err: any) {
-      setStatus("error");
-      setMsg(err?.message || "Network error. Please try again.");
-    }
-  }
+  // Fire-and-forget; we don't block the UI on this
+  fetch("/api/notify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(console.error);
 
-  return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <div className="card max-w-xl w-full">
-        <h1 className="text-2xl font-semibold mb-2">Join the waitlist</h1>
-        <p className="text-slate-600 mb-6">
-          Relief staffing for Australia’s LPO owners. Pop your details in and we’ll
-          let you know when onboarding opens.
-        </p>
+  setStatus("success");
+  form.reset();
+} else {
+  // ...your existing error handling
+}
 
         <form ref={formRef} onSubmit={onSubmit} className="space-y-3" noValidate>
           <input className="input w-full" type="email" name="email" placeholder="Email" required />
