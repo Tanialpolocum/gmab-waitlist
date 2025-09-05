@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export default function Page() {
-  const formRef = useRef<HTMLFormElement>(null);
+export default function Page() {  
   const [status, setStatus] = useState<Status>("idle");
   const [msg, setMsg] = useState("");
 
@@ -15,38 +14,35 @@ export default function Page() {
     "https://formspree.io/f/REPLACE_ME";
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setStatus("submitting");
-    setMsg("");
+  e.preventDefault();
+  setStatus("submitting");
+  setMsg("");
 
-    const form = formRef.current;
-    if (!form) {
-      setStatus("error");
-      setMsg("Form not ready. Please reload the page.");
-      return;
+  const form = e.currentTarget;
+  const data = new FormData(form);
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: data,
+      mode: "cors",
+    });
+
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j?.error || "Something went wrong");
     }
 
-    try {
-      const data = new FormData(form);
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-        body: data,
-        mode: "cors",
-      });
+    form.reset();                    // << no ref needed
+    setStatus("success");
+    setMsg("Thanks! You're on the list.");
+  } catch (err: any) {
+    setStatus("error");
+    setMsg(err?.message || "Network error. Try again.");
+  }
+}
 
-      if (res.ok) {
-        setStatus("success");
-        form.reset(); // safe because we use a ref
-      } else {
-        const j = await res.json().catch(() => ({}));
-        setStatus("error");
-        setMsg(
-          j?.errors?.[0]?.message ||
-            j?.message ||
-            "Something went wrong. Please try again."
-        );
-      }
     } catch (err: any) {
       setStatus("error");
       setMsg(err?.message || "Network error. Please try again.");
