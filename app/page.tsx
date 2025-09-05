@@ -30,6 +30,18 @@ export default function Page() {
       });
 
       if (res.ok) {
+        await fetch("/api/notify", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: formData.get("email"),
+    name: formData.get("name"),
+    company: formData.get("company"),
+    role: formData.get("role"),
+    notes: formData.get("notes"),
+  }),
+});
+
         setStatus("success");
         form.reset(); // safe: uses e.currentTarget
       } else {
