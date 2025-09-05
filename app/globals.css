@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --bg: #ffffff; --fg: #0f172a; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); }
+
+.button-primary { @apply rounded-2xl bg-gmab-orange px-5 py-3 font-semibold text-white transition hover:opacity-90; }
+.input { @apply rounded-2xl border border-slate-300 p-3 focus:outline-none focus:ring-2 focus:ring-gmab-orange; }
+.card { @apply rounded-2xl border border-slate-200 p-6 shadow-sm; }
