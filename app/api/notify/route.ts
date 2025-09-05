@@ -1,30 +1,34 @@
-export const runtime = "nodejs"; // be explicit: use Node runtime
-
+import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
     const { email, name, company, role, notes } = await req.json();
 
+    const html = `
+      <h2>New GMAB Waitlist Signup</h2>
+      <ul>
+        <li><b>Name:</b> ${name || "-"}</li>
+        <li><b>Email:</b> ${email || "-"}</li>
+        <li><b>Role:</b> ${role || "-"}</li>
+        <li><b>Company:</b> ${company || "-"}</li>
+        <li><b>Notes:</b> ${notes || "-"}</li>
+      </ul>
+    `;
+
     await resend.emails.send({
-      from: "Give Me A Break <onboarding@resend.dev>", // change later to your domain if you verify it
-      to: ["YOUR_EMAIL@EXAMPLE.COM"],                  // <-- put your inbox here
-      reply_to: email,
-      subject: "New waitlist signup",
-      text: [
-        `Email:   ${email || "-"}`,
-        `Name:    ${name || "-"}`,
-        `Role:    ${role || "-"}`,
-        `Company: ${company || "-"}`,
-        `Notes:   ${notes || "-"}`,
-      ].join("\n"),
+      // Use onboarding@resend.dev for testing. Switch to your domain email once verified in Resend.
+      from: "Give Me A Break <onboarding@resend.dev>",
+      to: (process.env.NOTIFY_TO ?? "taniamwalker@gmail.com").split(","),
+      subject: "New Waitlist Signup",
+      html
     });
 
-    return Response.json({ ok: true });
+    return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);
-    return new Response("Email failed", { status: 500 });
+    return NextResponse.json({ ok: false, error: "notify_failed" }, { status: 500 });
   }
 }
