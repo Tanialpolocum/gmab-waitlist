@@ -1,11 +1,15 @@
 "use client";
-import { useRef, useState } from "react";
+
+import React, { useRef, useState } from "react";
+
+type Status = "idle" | "submitting" | "success" | "error";
 
 export default function Page() {
   const formRef = useRef<HTMLFormElement>(null);
-  const [status, setStatus] = useState<"idle"|"submitting"|"success"|"error">("idle");
-  const [msg, setMsg] = useState<string>("");
+  const [status, setStatus] = useState<Status>("idle");
+  const [msg, setMsg] = useState("");
 
+  // Use the env var if present, else fall back to a placeholder
   const endpoint =
     process.env.NEXT_PUBLIC_FORMSPREE_ENDPOINT ||
     "https://formspree.io/f/REPLACE_ME";
@@ -18,13 +22,12 @@ export default function Page() {
     const form = formRef.current;
     if (!form) {
       setStatus("error");
-      setMsg("Form not ready. Please try again.");
+      setMsg("Form not ready. Please reload the page.");
       return;
     }
 
-    const data = new FormData(form);
-
     try {
+      const data = new FormData(form);
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { Accept: "application/json" },
@@ -34,11 +37,15 @@ export default function Page() {
 
       if (res.ok) {
         setStatus("success");
-        form.reset(); // <-- form is guaranteed non-null here
+        form.reset(); // safe because we use a ref
       } else {
-        const j = await res.json().catch(() => ({} as any));
+        const j = await res.json().catch(() => ({}));
         setStatus("error");
-        setMsg(j?.error || "Something went wrong. Please try again.");
+        setMsg(
+          j?.errors?.[0]?.message ||
+            j?.message ||
+            "Something went wrong. Please try again."
+        );
       }
     } catch (err: any) {
       setStatus("error");
@@ -47,11 +54,35 @@ export default function Page() {
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit}>
-      {/* inputs with name="email" | "name" | "company" | "role" | "notes" */}
-      <button disabled={status==="submitting"}>Join Waitlist</button>
-      {status==="error" && <p className="text-red-600">{msg}</p>}
-      {status==="success" && <p className="text-green-600">Thanks—you're on the list!</p>}
-    </form>
-  );
-}
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow p-6 sm:p-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold mb-2">
+          Join the waitlist
+        </h1>
+        <p className="text-slate-600 mb-6">
+          Relief staffing for Australia’s LPO owners. Pop your details in and
+          we’ll let you know when onboarding opens.
+        </p>
+
+        {/* Status banner */}
+        {status === "success" && (
+          <div className="mb-4 rounded-lg bg-green-50 text-green-800 px-3 py-2">
+            Thanks — you’re on the list! 🎉
+          </div>
+        )}
+        {status === "error" && (
+          <div className="mb-4 rounded-lg bg-red-50 text-red-700 px-3 py-2">
+            {msg || "Something went wrong. Please try again."}
+          </div>
+        )}
+
+        <form ref={formRef} onSubmit={onSubmit} className="space-y-4">
+          <input
+            type="email"
+            name="email"
+            required
+            placeholder="Email address"
+            className="input w-full"
+          />
+
+          <div class
